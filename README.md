@@ -73,6 +73,8 @@ The Makefile assembles a proper `.app` bundle (with `Info.plist` and `AppIcon.ic
 
 Click the menu bar icon → **Settings…**
 
+<img src="screenshots/settings.png" width="440" alt="Settings screen" />
+
 | Setting | Options |
 |---|---|
 | Check interval | 30 seconds / 60 seconds |
