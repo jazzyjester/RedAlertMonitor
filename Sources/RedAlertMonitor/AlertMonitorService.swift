@@ -183,8 +183,19 @@ class AlertMonitorService: ObservableObject {
         // Don't re-alert the exact same event cluster
         if let last = lastAlertTimestamp, mostRecent <= last { return }
 
+        // Apply location filter (case-insensitive substring match)
+        let filter = UserDefaults.standard.string(forKey: "locationFilter")?.trimmingCharacters(in: .whitespaces) ?? ""
+        let allLocations = Array(Set(matching.map { $0.data })).sorted()
+        let locations = filter.isEmpty
+            ? allLocations
+            : allLocations.filter { $0.localizedCaseInsensitiveContains(filter) }
+
+        guard !locations.isEmpty else {
+            if !isAlerting { statusText = "Monitoring... Alert outside your area" }
+            return
+        }
+
         lastAlertTimestamp = mostRecent
-        let locations = Array(Set(matching.map { $0.data })).sorted()
         triggerAlert(locations: locations)
     }
 

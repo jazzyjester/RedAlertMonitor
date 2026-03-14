@@ -4,9 +4,10 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject var monitor: AlertMonitorService
 
-    @AppStorage("pollInterval")    private var pollInterval: Double = 30
-    @AppStorage("soundName")       private var soundName: String   = "Basso"
-    @AppStorage("customSoundPath") private var customSoundPath: String = ""
+    @AppStorage("pollInterval")     private var pollInterval: Double = 30
+    @AppStorage("soundName")        private var soundName: String   = "Basso"
+    @AppStorage("customSoundPath")  private var customSoundPath: String = ""
+    @AppStorage("locationFilter")   private var locationFilter: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,6 +88,28 @@ struct SettingsView: View {
                 .labelsHidden()
                 .onChange(of: pollInterval) { _ in
                     monitor.restartWithNewInterval()
+                }
+            }
+
+            settingsCard(
+                icon: "location.fill",
+                iconColor: .green,
+                title: "Location Filter",
+                subtitle: "Only alert for your area — leave empty for all of Israel"
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField("e.g. תל אביב", text: $locationFilter)
+                        .textFieldStyle(.roundedBorder)
+
+                    if locationFilter.trimmingCharacters(in: .whitespaces).isEmpty {
+                        Label("Alerting for all areas", systemImage: "globe")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label("Alerting only when \"\(locationFilter)\" is in the area name", systemImage: "location.circle")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
                 }
             }
 

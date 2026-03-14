@@ -24,7 +24,7 @@ class SettingsWindowManager {
         win.styleMask = [.titled, .closable]
         win.isReleasedWhenClosed = false
         win.level = .floating
-        win.setContentSize(NSSize(width: 440, height: 560))
+        win.setContentSize(NSSize(width: 440, height: 680))
         win.center()
         self.window = win
 
