@@ -85,7 +85,7 @@ struct AppMenuView: View {
     var body: some View {
         // Alert section (shown only when active)
         if monitor.isAlerting {
-            Text("⚠️ MISSILE ALERT DETECTED")
+            Text(monitor.isSilentAlert ? "⚠️ ALERT OUTSIDE YOUR AREA" : "⚠️ MISSILE ALERT DETECTED")
 
             if !monitor.alertLocations.isEmpty {
                 Divider()
@@ -99,8 +99,10 @@ struct AppMenuView: View {
 
             Divider()
 
-            Button("Stop Sound") {
-                SoundManager.shared.stop()
+            if !monitor.isSilentAlert {
+                Button("Stop Sound") {
+                    SoundManager.shared.stop()
+                }
             }
 
             Button("Dismiss Alert") {

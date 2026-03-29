@@ -5,6 +5,7 @@ class AlertMonitorService: ObservableObject {
     static let alertTitle = "בדקות הקרובות צפויות להתקבל התרעות באזורך"
 
     @Published var isAlerting = false
+    @Published var isSilentAlert = false
     @Published var alertLocations: [String] = []
     @Published var animationFrame: Int = 0
     @Published var statusText = "Starting..."
@@ -159,6 +160,12 @@ class AlertMonitorService: ObservableObject {
     // MARK: - Detection
 
     private func processAlertData(_ data: Data) {
+        // Empty or whitespace-only response means no active alerts
+        let trimmed = data.filter { !($0 == 0x0D || $0 == 0x0A || $0 == 0x20 || $0 == 0x09) }
+        if trimmed.isEmpty {
+            if !isAlerting { statusText = "Monitoring... No active alerts" }
+            return
+        }
         guard let items = try? JSONDecoder().decode([AlertItem].self, from: data) else {
             statusText = "Response parse error"
             return
@@ -190,8 +197,12 @@ class AlertMonitorService: ObservableObject {
             ? allLocations
             : allLocations.filter { $0.localizedCaseInsensitiveContains(filter) }
 
-        guard !locations.isEmpty else {
-            if !isAlerting { statusText = "Monitoring... Alert outside your area" }
+        if locations.isEmpty {
+            // Hardcoded text matched but location filter excluded it — silent alert (animation only)
+            if !isAlerting && !isSilentAlert {
+                lastAlertTimestamp = mostRecent
+                triggerSilentAlert(locations: allLocations)
+            }
             return
         }
 
@@ -202,6 +213,7 @@ class AlertMonitorService: ObservableObject {
     // MARK: - Alert
 
     private func triggerAlert(locations: [String]) {
+        isSilentAlert = false
         isAlerting = true
         alertLocations = locations
         statusText = "⚠️ ALERT ACTIVE"
@@ -217,8 +229,25 @@ class AlertMonitorService: ObservableObject {
         }
     }
 
+    private func triggerSilentAlert(locations: [String]) {
+        isSilentAlert = true
+        isAlerting = true
+        alertLocations = locations
+        statusText = "⚠️ Alert outside your area"
+
+        startAnimation()
+        // No sound — location filter didn't match
+
+        // Auto-dismiss after 5 minutes
+        dismissTimer?.invalidate()
+        dismissTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async { self?.dismissAlert() }
+        }
+    }
+
     func dismissAlert() {
         isAlerting = false
+        isSilentAlert = false
         alertLocations = []
         stopAnimation()
         SoundManager.shared.stop()
